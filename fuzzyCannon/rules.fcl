@@ -1,0 +1,100 @@
+FUNCTION_BLOCK cannon	// Block definition (there may be more than one block per file)
+
+// Define input variables
+// DX varia de -90 a +90 e DY varia de -45 a +45
+VAR_INPUT				
+	DX : REAL;
+	DY : REAL;
+END_VAR
+
+// Define output variable
+VAR_OUTPUT				
+	variacaoDeAngulo : REAL;
+	variacaoDeVelocidade : REAL;
+END_VAR
+
+// Fuzzify input variable 'DX'. ALCANCE HORIZONTAL MÁXIMO: 90 metros
+FUZZIFY DX		
+	TERM muito_longe_para_esquerda := trian -90 -90 -55;
+	TERM longe_para_esquerda := trian -60 -45 -30; 
+	TERM para_esquerda := trian -33 -20.5 -8;
+	TERM centralizado :=  trian -10 0 10;
+	TERM para_direita := trian 8 20.5 33;
+	TERM longe_para_direita := trian 30 45 60;
+	TERM muito_longe_para_direita:= trian 55 90 90;
+END_FUZZIFY
+
+// Fuzzify input variable 'DY'. ALCANCE VERTICAL MÁXIMO 45 metros. 
+FUZZIFY DY		
+	TERM muito_longe_para_baixo := trian -45 -45 -25;
+	TERM longe_para_baixo := trian -30 -22.5 -15; 
+	TERM para_baixo := trian -18 -13 -8;
+	TERM centralizado :=  trian -10 0 10;
+	TERM para_cima := trian 8 13 18;
+	TERM longe_para_cima := trian 15 22.5 30;
+	TERM muito_longe_para_cima:= trian 25 45 45;
+END_FUZZIFY
+
+
+
+// Defzzzify output variable 'angleVariation' :
+DEFUZZIFY variacaoDeAngulo			
+	TERM muito_alto_para_baixo := trian -90 -90 -50;
+	TERM alto_para_baixo := trian -60 -50 -40;
+	TERM um_pouco_para_baixo := trian -45 -32.5 -20;
+	TERM moderado_para_baixo := trian -25 -14.5 -4;
+	TERM leve := trian -5 0 5;
+	TERM moderado_para_cima := trian 4 14.5 25;
+	TERM um_pouco_para_cima := trian 20 32.5 45;
+	TERM alto_para_cima := trian 40 50 60;
+	TERM muito_alto_para_cima := trian 50 90 90;
+	METHOD : COG;		// Use 'Center Of Gravity' defuzzification method
+	DEFAULT := 0;		// Default value is 0 (if no rule activates defuzzifier)
+END_DEFUZZIFY
+
+
+DEFUZZIFY variacaoDeVelocidade			
+	TERM reducao_alta := trian -30 -30 -20;
+	TERM reducao_media := trian -20 -16.5 -13;
+	TERM reducao_baixa := trape -15  -13 -10 -5;
+	TERM sutil := trape -10 -5 5 10;
+	TERM aumento_baixo := trape 5 10 13 15;
+	TERM aumento_medio := trian 13 16.5 20;
+	TERM aumento_alto := trian 20 30 30;
+	METHOD : COG;		// Use 'Center Of Gravity' defuzzification method
+	DEFAULT := 0;		// Default value is 0 (if no rule activates defuzzifier)
+END_DEFUZZIFY
+
+
+
+
+
+// Inference rules
+RULEBLOCK No1
+
+	AND : MIN;			// Use 'min' for 'and' (also implicit use 'max' for 'or' to fulfill DeMorgan's Law)
+	ACT : MIN;			// Use 'min' activation method
+	ACCU : MAX;			// Use 'max' accumulation method
+
+	RULE 1 : IF DX IS centralizado  THEN variacaoDeVelocidade IS sutil;
+	RULE 2 : IF DX IS muito_longe_para_esquerda THEN variacaoDeVelocidade IS aumento_alto;
+	RULE 3 : IF DX IS muito_longe_para_direita THEN variacaoDeVelocidade IS reducao_alta;
+	RULE 4 : IF DX IS longe_para_esquerda THEN variacaoDeVelocidade IS aumento_medio;
+	RULE 5 : IF DX IS longe_para_direita THEN variacaoDeVelocidade IS reducao_media;
+	RULE 6 : IF DX IS para_direita THEN variacaoDeVelocidade IS reducao_media;
+	RULE 7 : IF DX is para_esquerda THEN variacaoDeVelocidade IS aumento_medio;
+	RULE 8 : IF DY IS centralizado THEN variacaoDeAngulo IS leve;
+	RULE 9 : IF DY IS para_cima THEN variacaoDeAngulo IS moderado_para_baixo;
+	RULE 10 : IF DY IS longe_para_cima THEN variacaoDeAngulo IS alto_para_baixo;
+	RULE 11 : IF DY IS muito_longe_para_cima THEN variacaoDeAngulo IS muito_alto_para_baixo;
+	RULE 12 : IF DY IS para_baixo THEN variacaoDeAngulo IS  moderado_para_cima;
+	RULE 13 : IF DY IS longe_para_baixo THEN variacaoDeAngulo IS alto_para_cima;
+	RULE 14 : IF DY IS muito_longe_para_baixo THEN variacaoDeAngulo IS muito_alto_para_cima;
+	 
+	
+	
+
+
+END_RULEBLOCK
+
+END_FUNCTION_BLOCK
