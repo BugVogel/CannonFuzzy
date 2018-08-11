@@ -2,20 +2,29 @@
 
 package controller;
 
+import java.awt.Dimension;
+import java.util.ArrayList;
 import net.sourceforge.jFuzzyLogic.FIS;
 import net.sourceforge.jFuzzyLogic.FunctionBlock;
 import net.sourceforge.jFuzzyLogic.defuzzifier.Defuzzifier;
 import net.sourceforge.jFuzzyLogic.plot.JFuzzyChart;
 import net.sourceforge.jFuzzyLogic.rule.*;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.category.CategoryDataset;
+import org.jfree.data.category.DefaultCategoryDataset;
 
 
 public class Controller {
 
     private double gravidade = 10.0;
     private double alturaBocaDoCanhao = 1.0;
-    private double Xalvo = 15.0;
-    private double Yalvo = 10.0;
+    private double Xalvo = 58.0; //Coloque no máximo 60 aqui
+    private double Yalvo = 5.0; //Coloque no máximo 20 aqui
     private double raioProjetil = 0.5;
+    public double ultimoXt = 0.0;
     private FIS fis;
     private FunctionBlock functionBlock;
     //ALCANCE HORIZONTAL MÁXIMO: 90 metros. VELOCIDADE MÁXIMA: 30 metros por segundo.
@@ -66,6 +75,11 @@ public class Controller {
         
     }
     
+    public double calculaPosicaoDeColisaoX(double angulo, double velocidade, double Yalcancado){
+        double tempo = 2*velocidade*(Math.sin(angulo*(Math.PI)/180)/gravidade);
+        return 0;
+        
+    }
     
     public double[] calculaDXDY(double[] saidaSimulacao){
         double[] retorno = new double[2];
@@ -77,15 +91,20 @@ public class Controller {
     
     //retorna ponto que passou pelo alvo para calcular a diferença ou ponto de colisão do alvo
     public double[] simulacaoDoCanhao(double A0, double V0){
+        int parada = 0;
         double Vx = V0*(Math.cos(( Math.PI / 180 )*A0));
         double Vy = V0*(Math.sin(( Math.PI / 180 )*A0));
         double tempoMax = (2*Vy)/gravidade;
         double Xr = this.getAlcance(A0, V0);
         double Yr = 0.0;
         
-        for(double t = 0.1; t<tempoMax; t = t+0.1){
+        for(int tInt = 1; tInt<tempoMax*10; tInt = tInt+1){
+            double t = (double)tInt/10.0;
+            
             double xt = Vx*t;
-            if(expandeBalaX(xt)){ //passou pelo ponto X
+            ultimoXt = xt;
+            if(expandeBalaX(xt) && parada == 0){ //passou pelo ponto X
+                parada = 1;
                 double yt = alturaBocaDoCanhao + (Vy*t) - (gravidade*(t*t)/2);
                 Yr = yt; //se Yr for 0, entao
                 if(expandeBalaY(yt)){ //acertou o tiro!
@@ -120,6 +139,22 @@ public class Controller {
         fis.setVariable("DY", DY);
         
     }
+
+    public double getXalvo() {
+        return Xalvo;
+    }
+
+    public void setXalvo(double Xalvo) {
+        this.Xalvo = Xalvo;
+    }
+
+    public double getYalvo() {
+        return Yalvo;
+    }
+
+    public void setYalvo(double Yalvo) {
+        this.Yalvo = Yalvo;
+    }
     
     public void avaliarFuzzy(){
         fis.evaluate();
@@ -139,6 +174,7 @@ public class Controller {
         
         Variable angleVariation = functionBlock.getVariable("variacaoDeAngulo");
         Defuzzifier d = angleVariation.getDefuzzifier();
+  
         
         return d.defuzzify();
     }
@@ -150,10 +186,48 @@ public class Controller {
         Variable speedVariation = functionBlock.getVariable("variacaoDeVelocidade");
         Defuzzifier d = speedVariation.getDefuzzifier();
         
+        
         return d.defuzzify();
     }
     
     
+    private CategoryDataset criarDatasetParaGrafico(ArrayList<double[]> lista){
+        
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        
+        int i=0;
+        for(double[] dado : lista){
+            
+            
+            dataset.addValue(dado[0], "DX", ""+(i+1));
+            dataset.addValue(dado[1], "DY", ""+(i+1));
+            dataset.addValue(dado[2], "Ajuste de Angulo", ""+(i+1));
+            dataset.addValue(dado[3], "Ajuste de velocidade", ""+(i+1));
+            i++;
+         
+        }
+        
+        return dataset;
+    }
+    
+    private JFreeChart criarGráficoDeLinha(CategoryDataset dataset){
+        
+        JFreeChart graficoDeLinha = ChartFactory.createLineChart("Variação Entrada/Saida do Sistema Fuzzy", "Iteração", "Entradas", dataset, PlotOrientation.VERTICAL, true, false, false);
+        
+        return graficoDeLinha;
+    }
+    
+    public ChartPanel criarGrafico(ArrayList<double[]> lista){
+        
+        CategoryDataset dataset = this.criarDatasetParaGrafico(lista);
+        JFreeChart grafico = this.criarGráficoDeLinha(dataset);
+        
+        ChartPanel painel = new ChartPanel(grafico); 
+        
+        painel.setPreferredSize(new Dimension(664,400));
+        
+        return painel;
+    }
     
     
     
@@ -161,7 +235,7 @@ public class Controller {
         double ytC = yt+raioProjetil;
         double ytB = yt-raioProjetil;
         
-        if(ytC >= Xalvo && ytB <= Xalvo){
+        if(ytC >= Yalvo && ytB <= Yalvo){
             return true;
         }
         return false;
@@ -170,8 +244,9 @@ public class Controller {
     private boolean expandeBalaX(double xt){
         double xtE = xt-raioProjetil;
         double xtD = xt+raioProjetil;
+        //System.out.println("RaioE / Raio D / X alvo"+xtE+"  "+xtD+"  "+Xalvo+"  "+raioProjetil);
         
-        if(xtE <= Xalvo && xtD >= Xalvo){
+        if(xtE >= Xalvo || xtD >= Xalvo){
             return true;
         }
         return false;

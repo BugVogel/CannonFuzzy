@@ -17,50 +17,50 @@ END_VAR
 FUZZIFY DX		
 	TERM muito_longe_para_esquerda := trian -90 -90 -55;
 	TERM longe_para_esquerda := trian -60 -45 -30; 
-	TERM para_esquerda := trian -33 -20.5 -8;
-	TERM centralizado :=  trian -10 0 10;
-	TERM para_direita := trian 8 20.5 33;
+	TERM para_esquerda := trian -33 -14 0;
+	TERM centralizado :=  trian 0 0 3;
+	TERM para_direita := trian 0 14 33;
 	TERM longe_para_direita := trian 30 45 60;
 	TERM muito_longe_para_direita:= trian 55 90 90;
 END_FUZZIFY
 
 // Fuzzify input variable 'DY'. ALCANCE VERTICAL MÁXIMO 45 metros. 
 FUZZIFY DY		
-	TERM muito_longe_para_baixo := trian -45 -45 -25;
-	TERM longe_para_baixo := trian -30 -22.5 -15; 
-	TERM para_baixo := trian -18 -13 -8;
-	TERM centralizado :=  trian -10 0 10;
-	TERM para_cima := trian 8 13 18;
-	TERM longe_para_cima := trian 15 22.5 30;
-	TERM muito_longe_para_cima:= trian 25 45 45;
+	TERM muito_longe_para_baixo := trian 25 45 45;
+	TERM longe_para_baixo := trian 10 18 30; 
+	TERM para_baixo := trian 1 5 10;
+	TERM centralizado :=  trian -3 0 3;
+	TERM para_cima := trian -10 -5 -1;
+	TERM longe_para_cima := trian -30 -18 -10;
+	TERM muito_longe_para_cima:= trian -45 -45 -25;
 END_FUZZIFY
 
 
 
 // Defzzzify output variable 'angleVariation' :
-DEFUZZIFY variacaoDeAngulo			
-	TERM muito_alto_para_baixo := trian -90 -90 -50;
-	TERM alto_para_baixo := trian -60 -50 -40;
-	TERM um_pouco_para_baixo := trian -45 -32.5 -20;
-	TERM moderado_para_baixo := trian -25 -14.5 -4;
-	TERM leve := trian -5 0 5;
-	TERM moderado_para_cima := trian 4 14.5 25;
-	TERM um_pouco_para_cima := trian 20 32.5 45;
-	TERM alto_para_cima := trian 40 50 60;
-	TERM muito_alto_para_cima := trian 50 90 90;
+DEFUZZIFY variacaoDeAngulo
+	TERM abaixar_muito := trian -12 -10 -7;			
+	TERM abaixar := trian -8 -6 -3;
+	TERM abaixar_pouco := trian -3 -1.5 0;
+	TERM manter := trian -1 0 1;
+	TERM elevar_pouco := trian 0 1.5 3;
+	TERM elevar := trian 3 6 8;
+	TERM elevar_muito := trian 7 10 12;
+
 	METHOD : COG;		// Use 'Center Of Gravity' defuzzification method
 	DEFAULT := 0;		// Default value is 0 (if no rule activates defuzzifier)
 END_DEFUZZIFY
 
 
-DEFUZZIFY variacaoDeVelocidade			
-	TERM reducao_alta := trian -30 -30 -20;
-	TERM reducao_media := trian -20 -16.5 -13;
-	TERM reducao_baixa := trape -15  -13 -10 -5;
-	TERM sutil := trape -10 -5 5 10;
-	TERM aumento_baixo := trape 5 10 13 15;
-	TERM aumento_medio := trian 13 16.5 20;
-	TERM aumento_alto := trian 20 30 30;
+DEFUZZIFY variacaoDeVelocidade
+	TERM reducao_alta := trian -8 -8 -6;			
+	TERM reducao := trian -6 -4 -2.5;
+	TERM reducao_baixa := trian -2.5 -1 0;
+	TERM manter := trian -1 0 1;
+	TERM aumento_baixo := trian 0 1 2.5;
+	TERM aumento := trian 2.5 4 6;
+	TERM aumento_alto := trian 6 8 8;	
+
 	METHOD : COG;		// Use 'Center Of Gravity' defuzzification method
 	DEFAULT := 0;		// Default value is 0 (if no rule activates defuzzifier)
 END_DEFUZZIFY
@@ -76,21 +76,33 @@ RULEBLOCK No1
 	ACT : MIN;			// Use 'min' activation method
 	ACCU : MAX;			// Use 'max' accumulation method
 
-	RULE 1 : IF DX IS centralizado  THEN variacaoDeVelocidade IS sutil;
-	RULE 2 : IF DX IS muito_longe_para_esquerda THEN variacaoDeVelocidade IS aumento_alto;
-	RULE 3 : IF DX IS muito_longe_para_direita THEN variacaoDeVelocidade IS reducao_alta;
-	RULE 4 : IF DX IS longe_para_esquerda THEN variacaoDeVelocidade IS aumento_medio;
-	RULE 5 : IF DX IS longe_para_direita THEN variacaoDeVelocidade IS reducao_media;
-	RULE 6 : IF DX IS para_direita THEN variacaoDeVelocidade IS reducao_media;
-	RULE 7 : IF DX is para_esquerda THEN variacaoDeVelocidade IS aumento_medio;
-	RULE 8 : IF DY IS centralizado THEN variacaoDeAngulo IS leve;
-	RULE 9 : IF DY IS para_cima THEN variacaoDeAngulo IS moderado_para_baixo;
-	RULE 10 : IF DY IS longe_para_cima THEN variacaoDeAngulo IS alto_para_baixo;
-	RULE 11 : IF DY IS muito_longe_para_cima THEN variacaoDeAngulo IS muito_alto_para_baixo;
-	RULE 12 : IF DY IS para_baixo THEN variacaoDeAngulo IS  moderado_para_cima;
-	RULE 13 : IF DY IS longe_para_baixo THEN variacaoDeAngulo IS alto_para_cima;
-	RULE 14 : IF DY IS muito_longe_para_baixo THEN variacaoDeAngulo IS muito_alto_para_cima;
-	 
+
+	RULE 1 : IF DX IS muito_longe_para_esquerda THEN variacaoDeVelocidade IS aumento_alto;
+	RULE 2 : IF DX IS longe_para_esquerda THEN variacaoDeVelocidade IS aumento;
+	RULE 3 : IF DX IS para_esquerda THEN variacaoDeVelocidade IS aumento_baixo;
+	RULE 4 : IF DX IS para_direita THEN variacaoDeVelocidade IS reducao_baixa;
+	RULE 5 : IF DX IS longe_para_direita THEN variacaoDeVelocidade IS reducao;
+	RULE 6 : IF DX IS muito_longe_para_direita THEN variacaoDeVelocidade IS reducao_baixa;
+
+	RULE 7 : IF DX IS NOT centralizado THEN variacaoDeAngulo IS manter;
+
+	RULE 8 : IF DX IS centralizado AND DY IS para_cima THEN variacaoDeVelocidade IS aumento_baixo;
+	RULE 9 : IF DX IS centralizado AND DY IS longe_para_cima THEN variacaoDeVelocidade IS aumento_baixo;
+	RULE 10 : IF DX IS centralizado AND DY IS muito_longe_para_cima THEN variacaoDeVelocidade IS aumento;
+	RULE 11 : IF DX IS centralizado AND DY IS para_baixo THEN variacaoDeVelocidade IS reducao_baixa;
+	RULE 12 : IF DX IS centralizado AND DY IS longe_para_baixo THEN variacaoDeVelocidade IS reducao_baixa;
+	RULE 13 : IF DX IS centralizado AND DY IS muito_longe_para_baixo THEN variacaoDeVelocidade IS reducao;
+	RULE 14 : IF DX IS centralizado AND DY IS para_cima THEN variacaoDeAngulo IS elevar_pouco;
+	RULE 15 : IF DX IS centralizado AND DY IS longe_para_cima THEN variacaoDeAngulo IS elevar;
+	RULE 16 : IF DX IS centralizado AND DY IS muito_longe_para_cima THEN variacaoDeAngulo IS elevar;
+	RULE 17 : IF DX IS centralizado AND DY IS para_baixo THEN variacaoDeAngulo IS abaixar_pouco;
+	RULE 18 : IF DX IS centralizado AND DY IS longe_para_baixo THEN variacaoDeAngulo IS abaixar;
+	RULE 19 : IF DX IS centralizado AND DY IS muito_longe_para_baixo THEN variacaoDeAngulo IS abaixar;
+
+	RULE 20 : IF DY IS centralizado THEN variacaoDeAngulo IS manter;
+	RULE 21 : IF DY IS centralizado AND DX IS centralizado THEN variacaoDeVelocidade IS manter;
+
+
 	
 	
 
